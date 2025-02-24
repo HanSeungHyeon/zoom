@@ -1,4 +1,4 @@
-const socket = io();
+const socket = io()
 
 const welcome = document.getElementById('welcome')
 const room = document.getElementById('room')
@@ -6,25 +6,15 @@ const roomNameForm = welcome.querySelector('#roomName')
 const userNameForm = welcome.querySelector('#userName')
 
 room.hidden = true
-let roomName;
+let roomName
 
+/******************* 기타 함수 *******************/
 //메세지 추가이벤트
 const addMessage = (message) => {
   const ul = room.querySelector('ul')
   const li = document.createElement('li')
   li.innerHTML = message
   ul.appendChild(li)
-}
-
-//메세지 전송 콜백
-const handleMessageSubmit = (event) => {
-  event.preventDefault()
-  const input = room.querySelector('#msg input')
-  const msg = input.value
-  socket.emit('new_message', msg, roomName, () => {
-    addMessage(`You : ${msg}`)
-  })
-  input.value = ''
 }
 
 //방 접속이벤트
@@ -35,6 +25,20 @@ const enterRoomCallback = (newCount) => {
   h3.innerHTML = `Room ${roomName} (${newCount})`
   const msgForm = room.querySelector('#msg')
   msgForm.addEventListener('submit', handleMessageSubmit)
+}
+/*************************************************/
+
+/**************** 브라우저 > 서버 ****************/
+
+//메세지 전송
+const handleMessageSubmit = (event) => {
+  event.preventDefault()
+  const input = room.querySelector('#msg input')
+  const msg = input.value
+  socket.emit('new_message', msg, roomName, () => {
+    addMessage(`You : ${msg}`)
+  })
+  input.value = ''
 }
 
 //닉네임 설정 이벤트
@@ -53,8 +57,9 @@ const handleRoomNameSubmit = (event) => {
   roomName = input.value
   input.value = ''
 }
+/*************************************************/
 
-/** 서버 > 사용자 */
+/***************** 서버 > 사용자 *****************/
 
 //룸에 새로운 사용자가 접속할 경우
 socket.on('enterNewUser', (userNickname, newCount) => {
@@ -87,7 +92,7 @@ socket.on('room_change', (rooms) => {
     roomList.append(li)
   })
 })
-/** */
+/*************************************************/
 
 roomNameForm.addEventListener('submit', handleRoomNameSubmit)
 userNameForm.addEventListener('submit', handleUserNameSubmit)

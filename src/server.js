@@ -18,8 +18,19 @@ const httpServer = http.createServer(app);
 const wsServer = SocketIO(httpServer);
 
 wsServer.on('connection', socket => {
-  socket.on('enter_room', (msg, done) => {
-    console.log(msg)
+  socket.on('enter_room', (roomName, callback) => {
+    socket.join(roomName)
+    callback()
+    socket.to(roomName).emit('enterNewUser')
+  })
+
+  socket.on('disconnecting', () => {
+    socket.rooms.forEach(room => socket.to(room).emit('bye'))
+  })
+
+  socket.on('new_message', (msg, room, done) => {
+    const newMsg = `${socket.id} : ${msg}`
+    socket.to(room).emit('new_message', newMsg);
     done()
   })
 })

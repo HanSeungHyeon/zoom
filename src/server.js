@@ -1,6 +1,7 @@
 import http from "http";
-import WebSocket from "ws";
+import SocketIO from "socket.io"
 import express from "express";
+// import WebSocket from "ws";
 
 const app = express();
 
@@ -13,7 +14,18 @@ app.get("/*", (_, res) => res.redirect("/"));
 const handleListen = () => console.log(`Listening on http://localhost:3000`);
 // app.listen(3000, handleListen);
 
-const server = http.createServer(app);
+const httpServer = http.createServer(app);
+const wsServer = SocketIO(httpServer);
+
+wsServer.on('connection', socket => {
+  socket.on('enter_room', (msg, done) => {
+    console.log(msg)
+    done()
+  })
+})
+
+
+/*
 const wss = new WebSocket.Server({ server });
 
 const makeMessge = (user, message) => {
@@ -44,19 +56,21 @@ const onSocketMessage = (message) => {
 }
 
 //3. 서버 -> 브라우저 메세지
-// const onServerMessage = (socket, message = 'hello') => {
-//   socket.send(message)
-// }
+const onServerMessage = (socket, message = 'hello') => {
+  socket.send(message)
+}
 
 //소켓 리스트
 const sockets = [];
 
 
-//소켓 연결 시
+// //소켓 연결 시
 wss.on("connection", (socket) => {
   sockets.push(socket);
   socket.on('close', onSocketClose) //1
   socket.on('message', onSocketMessage) //2
 })
 
-server.listen(3000, handleListen)
+ */
+
+httpServer.listen(3000, handleListen)

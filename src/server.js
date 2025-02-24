@@ -21,18 +21,21 @@ wsServer.on('connection', socket => {
   socket.on('enter_room', (roomName, callback) => {
     socket.join(roomName)
     callback()
-    socket.to(roomName).emit('enterNewUser')
+    socket.to(roomName).emit('enterNewUser', socket.nickname)
   })
 
   socket.on('disconnecting', () => {
-    socket.rooms.forEach(room => socket.to(room).emit('bye'))
+    socket.rooms.forEach(room => socket.to(room).emit('bye', socket.nickname))
   })
 
   socket.on('new_message', (msg, room, done) => {
-    const newMsg = `${socket.id} : ${msg}`
+    const newMsg = `${socket.nickname} : ${msg}`
     socket.to(room).emit('new_message', newMsg);
     done()
   })
+
+  //소켓 별 닉네임 설정
+  socket.on('nickname', nickname => (socket['nickname'] = nickname))
 })
 
 

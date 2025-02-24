@@ -1,5 +1,6 @@
 import http from "http";
-import SocketIO from "socket.io"
+import { Server } from "socket.io"
+import { instrument } from "@socket.io/admin-ui";
 import express from "express";
 // import WebSocket from "ws";
 
@@ -13,19 +14,58 @@ app.get("/*", (_, res) => res.redirect("/"));
 
 const handleListen = () => console.log(`Listening on http://localhost:3000`);
 // app.listen(3000, handleListen);
-
+// const wsServer = SocketIO(httpServer);
 const httpServer = http.createServer(app);
-const wsServer = SocketIO(httpServer);
+const wsServer = new Server(httpServer, {
+  cors: {
+    origin: ["https://admin.socket.io"],
+    credentials: true
+  }
+});
+
+instrument(wsServer, {
+  auth: false,
+  mode: "development",
+});
+
+//공개 방
+const publicRooms = () => {
+  const {
+    sockets: {
+      adapter: { sids, rooms },
+    },
+  } = wsServer
+
+  const publicRooms = [];
+  rooms.forEach((_, key) => {
+    if(sids.get(key) === undefined) {
+      publicRooms.push(key)
+    }
+  })
+
+  return publicRooms
+}
+
+//방 접속자 수
+const countRoom = (roomName) => {
+  return wsServer.sockets.adapter.rooms.get(roomName)?.size
+}
 
 wsServer.on('connection', socket => {
   socket.on('enter_room', (roomName, callback) => {
     socket.join(roomName)
-    callback()
-    socket.to(roomName).emit('enterNewUser', socket.nickname)
+    callback(countRoom(roomName))
+    socket.to(roomName).emit('enterNewUser', socket.nickname, countRoom(roomName))
+    wsServer.sockets.emit('room_change', publicRooms())
   })
 
   socket.on('disconnecting', () => {
-    socket.rooms.forEach(room => socket.to(room).emit('bye', socket.nickname))
+    socket.rooms.forEach(room => socket.to(room).emit('bye', socket.nickname, countRoom(room) - 1))
+  })
+  
+  //소켓 연결 종료 시
+  socket.on('disconnect', () => {
+    wsServer.sockets.emit('room_change', publicRooms())
   })
 
   socket.on('new_message', (msg, room, done) => {
@@ -38,6 +78,8 @@ wsServer.on('connection', socket => {
   socket.on('nickname', nickname => (socket['nickname'] = nickname))
 })
 
+//모든 사람에게 message전송 - 공지용
+wsServer.sockets.emit('hi', 'everyone')
 
 /*
 const wss = new WebSocket.Server({ server });

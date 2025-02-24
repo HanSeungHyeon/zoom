@@ -28,11 +28,11 @@ const handleMessageSubmit = (event) => {
 }
 
 //방 접속이벤트
-const enterRoomCallback = () => {
+const enterRoomCallback = (newCount) => {
   welcome.hidden = true
   room.hidden = false
   const h3 = room.querySelector('h3')
-  h3.innerHTML = `Room ${roomName}`
+  h3.innerHTML = `Room ${roomName} (${newCount})`
   const msgForm = room.querySelector('#msg')
   msgForm.addEventListener('submit', handleMessageSubmit)
 }
@@ -57,17 +57,36 @@ const handleRoomNameSubmit = (event) => {
 /** 서버 > 사용자 */
 
 //룸에 새로운 사용자가 접속할 경우
-socket.on('enterNewUser', (userNickname) => {
+socket.on('enterNewUser', (userNickname, newCount) => {
+  console.log('hi')
+  const h3 = room.querySelector('h3')
+  h3.innerHTML = `Room ${roomName} (${newCount})`
   addMessage(`${userNickname} alive!`)
 })
 
 //룸에 사용자가 떠날 경우
-socket.on('bye', (userNickname) => {
+socket.on('bye', (userNickname, newCount) => {
+  const h3 = room.querySelector('h3')
+  h3.innerHTML = `Room ${roomName} (${newCount})`
   addMessage(`${userNickname} leave!`)
 })
 
 //새로운 메시지
 socket.on('new_message', addMessage)
+
+socket.on('room_change', (rooms) => {
+  const roomList = welcome.querySelector('ul')
+  roomList.innerHTML = ''
+  if(rooms.length === 0) {
+    return
+  }
+
+  rooms.forEach(room => {
+    const li = document.createElement('li')
+    li.innerHTML = room;
+    roomList.append(li)
+  })
+})
 /** */
 
 roomNameForm.addEventListener('submit', handleRoomNameSubmit)
